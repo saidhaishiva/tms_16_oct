@@ -117,6 +117,10 @@ app.factory('Issue',function($http){
     issueFactory.getAllComments = function(id){
         return  $http.get('/api/getAllComments/'+id);
     };
+    issueFactory.getSearchResults = function(searchObject){
+        console.log(searchObject);
+        return  $http.post('/api/filterSearch',searchObject);
+    };
 
      return issueFactory;
 });

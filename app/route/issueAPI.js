@@ -703,5 +703,37 @@ router.get('/myStatsByModuleForChartOnlyOpen',function (req,res) {
     });
 });
 
+
+router.post('/filterSearch',function (req,res) {
+    //console.log(req.body.selectedInternalStatusChip+"This is res");
+    var selectedInternalStatusChip = req.body.selectedInternalStatusChip;
+    var selectedMantisStatusChip = req.body.selectedMantisStatusChip;
+    var selectedExternalCategoryChip = req.body.selectedExternalCategoryChip;
+    var selectedInternalCategoryChip = req.body.selectedInternalCategoryChip;
+    var selectedExternalPriorityChip = req.body.selectedExternalPriorityChip;
+    var selectedInternalPriorityChip = req.body.selectedInternalPriorityChip;
+    var moduleChip = req.body.moduleChip;
+    var assignToChip = req.body.assignToChip;
+    //console.log(selectedMantisStatusChip);
+    //console.log(selectedInternalStatusChip);
+    //console.log(selectedExternalCategoryChip);
+    //console.log(selectedInternalCategoryChip);
+    //console.log(selectedExternalPriorityChip);
+    //console.log(selectedInternalPriorityChip);
+    //console.log(moduleChip);
+    //console.log(assignToChip);
+    
+    Issue.find(
+        {$and : [{"active":"1"},{ internalStatus: { $in: selectedInternalStatusChip  } },{ mantisStatus :  { $in: selectedMantisStatusChip }  },{ mantisCategory :  { $in: selectedExternalCategoryChip }  },{ internalCategory :  { $in: selectedInternalCategoryChip }  },{ mantisPriority :  { $in: selectedExternalPriorityChip }  },{ internalPriority :  { $in: selectedInternalPriorityChip }  },{ module :  { $in: moduleChip }  },{ assingedTo :  { $in: assignToChip }  } ] }).select().exec(function (err,searchResult) {
+            if(err){
+            res.json({success:false,message:err});
+            console.log(err);
+            }else{ 
+                console.log(searchResult+"result");      
+                 res.json({success:true,searchResult:searchResult});
+            }
+    });
+});
+
     return router;
 }

@@ -1,13 +1,13 @@
 var app = angular.module('allTicketsController',['issueServices','commentServices'])
 
-app.controller('allTicketsCtrl', function ($http,$location,$timeout,Issue,$scope,DTOptionsBuilder, DTColumnBuilder,DTColumnDefBuilder,$compile,$mdDialog,Comment ) {
+app.controller('allTicketsCtrl', function ($http,$location,$timeout,Issue,$scope,DTOptionsBuilder, DTColumnBuilder,DTColumnDefBuilder,$compile,$mdDialog,User,Comment ) {
 
     var appData=this;
     appData.Categories = ["Issue", "Support Request", "Enhancement Request"];
     appData.mantisStatus = ["New", "Assigned", "Confirmed", "Feedback","Resolved","Closed"];
     appData.priorities = ["Low", "Normal", "High","Immediate"];
-    appData.internalStatus = ["Assigned", "Confirmed", "Waiting For Feedback","Resolved","Closed"];
-    
+    appData.internalStatus = ["Assigned", "New", "Waiting For Feedback","Waiting for Review","Resolved","Closed"];
+    var arr = new Array();
     
 
     appData.getTickets = function(){
@@ -21,9 +21,46 @@ app.controller('allTicketsCtrl', function ($http,$location,$timeout,Issue,$scope
         });  
     };
 
+    appData.getTicketSummaryByModule = function(){
+        Issue.getTicketSummaryByModule().then(function(data){
+            appData.TicketSummary =  data.data.TicketSummary;
+            appData.moduleList = [];
+            for(i=0;i<appData.TicketSummary.length;i++){
+                   if ((appData.moduleList.indexOf(appData.TicketSummary[i]._id))<0){
+                    appData.moduleList.push(appData.TicketSummary[i]._id);    
+                }
+            }
+            appData.moduleList.sort();       
+            console.log(appData.moduleList);
+        });        
+    };
+
     
 
     appData.getTickets();
+    appData.getTicketSummaryByModule();
+
+    
+
+    appData.getAllUsers = function (){
+        User.getAllUsers().then(function (data) {
+            if(data.data.success){
+                
+                appData.users =  data.data.users;
+                //console.log(appData.users);
+                appData.loading = false;
+                appData.accessDenied = false;
+                angular.forEach(appData.users, function (users) {
+                    arr.push({ userName: users.userName, associateID:users.associateID});
+                });
+                console.log(arr);
+                $scope.usersList = arr; 
+            }
+        });
+
+    }
+    appData.getAllUsers();
+    appData.repos = arr;
     
 
     $scope.vm = {};
@@ -124,6 +161,89 @@ app.controller('allTicketsCtrl', function ($http,$location,$timeout,Issue,$scope
             $scope.showCommentPopup();
         });
     };
+
+    $scope.showSearchResults = function(showData){
+        resultObject = {};
+        appData.associateIDData = [];
+        appData.ticketData = [];
+        console.log(appData.selectedMantisStatusChip);
+        //for(i=0;i<appData.length;i++){
+            if(appData.selectedMantisStatusChip!=""){
+                resultObject.selectedMantisStatusChip = appData.selectedMantisStatusChip;
+            }else{
+                resultObject.selectedMantisStatusChip = ["New", "Assigned", "Confirmed", "Feedback","Resolved","Closed"];
+            }
+
+            if(appData.selectedInternalStatusChip!=""){
+                resultObject.selectedInternalStatusChip = appData.selectedInternalStatusChip;
+            }else{
+                resultObject.selectedInternalStatusChip = ["Assigned", "New", "Waiting For Feedback","Waiting for Review","Resolved","Closed"];
+            }
+
+            if(appData.selectedExternalCategoryChip!=""){
+                resultObject.selectedExternalCategoryChip = appData.selectedExternalCategoryChip;
+            }else{
+                resultObject.selectedExternalCategoryChip = ["Issue", "Support Request", "Enhancement Request"];
+            }
+
+            if(appData.selectedInternalCategoryChip!=""){
+                resultObject.selectedInternalCategoryChip = appData.selectedInternalCategoryChip;
+            }else{
+                resultObject.selectedInternalCategoryChip = ["Issue", "Support Request", "Enhancement Request"];
+            }
+
+            if(appData.selectedExternalPriorityChip!=""){
+                resultObject.selectedExternalPriorityChip = appData.selectedExternalPriorityChip;
+            }else{
+                resultObject.selectedExternalPriorityChip = ["Low", "Normal", "High","Immediate"];
+            }
+
+            if(appData.selectedInternalPriorityChip!=""){
+                resultObject.selectedInternalPriorityChip = appData.selectedInternalPriorityChip;
+            }else{
+                resultObject.selectedInternalPriorityChip = ["Low", "Normal", "High","Immediate"];
+            }
+
+            if(appData.moduleChip!=""){
+                resultObject.moduleChip = appData.moduleChip;
+            }else{
+                resultObject.moduleChip = appData.moduleList;
+            }
+
+            if(appData.assignToChip!=""){
+                resultObject.assignToChip = appData.assignToChip;
+                for(i=0;i<appData.assignToChip.length;i++){
+                    //console.log(appData.assignToChip[i].associateID);
+                    appData.ticketData.push(appData.assignToChip[i].associateID);
+                }
+                //console.log(appData.ticketData);
+                resultObject.assignToChip = appData.ticketData;
+            }else{
+                var associateValue = appData.repos;
+                for(i=0;i<associateValue.length;i++){
+                    appData.associateIDData = associateValue[i].associateID;
+                    //console.log(appData.associateIDData);
+                    appData.ticketData.push(appData.associateIDData);
+                }
+                //console.log(appData.ticketData);
+                resultObject.assignToChip = appData.ticketData;
+            }
+            
+            //console.log(resultObject);
+            /*resultObject.selectedExternalCategoryChip = appData.selectedExternalCategoryChip;
+            resultObject.moduleChip = appData.moduleChip;
+            resultObject.assignToChip = appData.assignToChip;
+            resultObject.selectedInternalPriorityChip = appData.selectedInternalPriorityChip;
+            resultObject.selectedExternalPriorityChip = appData.selectedExternalPriorityChip;
+            resultObject.selectedInternalCategoryChip = appData.selectedInternalCategoryChip;*/
+        //}
+        console.log(resultObject);
+        
+        Issue.getSearchResults(resultObject).then(function (data) {
+            console.log(data.data.searchResult);
+            appData.tickets = data.data.searchResult;
+        });
+    }
 
     $scope.showCommentPopup = function(ev) {
         //console.log(ev);
@@ -250,6 +370,52 @@ app.controller('allTicketsCtrl', function ($http,$location,$timeout,Issue,$scope
 
       }
 
+      appData.readonly = false;
+      appData.selectedItem = null;
+      appData.selectedItemInternal = null;
+      appData.selectedItemExternal = null;
+      appData.selectedModule = null;
+      appData.selectedItemInternalPriority = null;
+      appData.searchText = null;
+      appData.selectedUsers = null;
+      appData.selectedItemExternalPriority = null;
+      appData.selectedItemInternalCategory = null;
+      
+      
+
+      appData.selectedMantisStatusChip = [];
+      appData.selectedInternalStatusChip = [];
+      appData.selectedExternalCategoryChip = [];
+      appData.moduleChip = [];
+      appData.assignToChip = [];
+      appData.selectedInternalPriorityChip = [];
+      appData.selectedExternalPriorityChip = [];
+      appData.selectedInternalCategoryChip = [];
+      
+      
+      appData.autocompleteDemoRequireMatch = true;
+      appData.autocompleteDemoRequireMatchInternal = true;
+      appData.autocompleteDemoRequireMatchExternal = true;
+      appData.autocompleteModule = true;
+      appData.autocompleteAssignTo = true;
+      appData.autocompleteInternalPriority = true;
+      appData.autocompleteExternalPriority = true;
+      appData.autocompleteInternalCategory = true;
+      
+      
+      
+      
+      appData.transformChip = transformChip;
+
+    function transformChip(chip) {
+        // If it is an object, it's already a known chip
+        if (angular.isObject(chip)) {
+          return chip;
+        }
+  
+        // Otherwise, create a new one
+        return chip;
+      }
 });
 
 var isDlgOpen;
