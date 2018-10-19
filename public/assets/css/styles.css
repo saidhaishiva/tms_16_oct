@@ -383,4 +383,7 @@ md-autocomplete#custom-template input,md-autocomplete#custom-template-module inp
   .navbar-brand{
     color: #fff !important;
   }
+  .table_padding{
+      padding: 20px 0px;
+  }
   /*************************NavBarStyling Ends*****************************/
